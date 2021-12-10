@@ -78,14 +78,16 @@ void loop()
   int potiValue = analogRead(SPEED_POTI_IN_PIN);
 
   if (potiValue > LOWER_BOUND && potiValue < UPPER_BOUND && potiValue != oldValue) {
-    // When the poti is in the middle section set the speed to the needed default speed to achieve the desiered speed of 1 rotation per minute
+    // When the poti is in the middle section set the speed to the needed default speed to achieve the desired speed of 1 rotation per minute
     ICR1 = DEFAULT_SPEED;
     rotationsPerDay = "1x";
-    displayString = "STANDARD";
+    displayString = "Standard";
+    
+    // Set direction to low (Default Direction)
+    digitalWrite(DIRECTION_OUT_PIN, LOW);
 
     // Turn the backlight of the display of, to not interfere with the image
     lcd.noBacklight();
-    lcd.clear();
   } else if(potiValue != oldValue) {
     // When the poti is outside the middle section use the absolute distance from the center position to reduce the time until the next tick to the stepper motor is send, increasing its speed.
     float currentSpeed = DEFAULT_SPEED - (abs((ANALOG_RESOLUTION / 2) - potiValue) * SPEED_MULTIPLIER);
@@ -100,24 +102,24 @@ void loop()
   }
 
   if (potiValue < LOWER_BOUND && potiValue != oldValue) {
-    // Set direction to high, Reversing the direciton of the stepper motor
+    // Set direction to high, Reversing the direction of the stepper motor
     digitalWrite(DIRECTION_OUT_PIN, HIGH);
-    displayString = "RUECKLAUF";
+    displayString = "Ruecklauf";
   }
 
   if (potiValue > UPPER_BOUND && potiValue != oldValue) {
-    // Set direction to high, Reversing the direction of the stepper motor
+    // Set direction to low (Default Direction)
     digitalWrite(DIRECTION_OUT_PIN, LOW);
-    displayString = "VORLAUF";
+    displayString = "Vorlauf";
   }
 
   // Print the information to the display
   lcd.setCursor(0, 0);
-  lcd.print("Speed: " + rotationsPerDay);
+  lcd.print("Speed: " + rotationsPerDay + "       ");
   lcd.setCursor(0, 1);
-  lcd.print(displayString);
+  lcd.print(displayString + "       ");
 
   // Store the old value of the potentiometer, to check for changes
   oldValue = potiValue;
-  delay(50);
+  delay(10);
 }
