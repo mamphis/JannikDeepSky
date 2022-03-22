@@ -9,6 +9,7 @@
 #define PULS_OUT_PIN      9
 #define DIRECTION_OUT_PIN 6
 #define SPEED_POTI_IN_PIN A1
+#define HEMISPHERE_IN_PIN 7
 
 // Constants
 #define DEFAULT_SPEED     35902
@@ -17,6 +18,9 @@
 #define UPPER_BOUND       ANALOG_RESOLUTION / 2 + (RANGE / 2)
 #define LOWER_BOUND       ANALOG_RESOLUTION / 2 - (RANGE / 2)
 #define SPEED_MULTIPLIER  63
+
+int currentHemisphereLow = LOW;
+int currentHemisphereHigh = HIGH;
 
 // Initialize the display. (I²C Adresse = 0x27, 16 Spalten, 2 Reihen)
 // See: https://funduino.de/nr-19-i%C2%B2c-display
@@ -62,9 +66,12 @@ void setup()
   // Set DIRECTION_OUT_PIN to output
   pinMode(DIRECTION_OUT_PIN, OUTPUT);
   
-  // Setze Drehrichtung
-  digitalWrite(DIRECTION_OUT_PIN, LOW);
+  // Set the direction of the motor
+  digitalWrite(DIRECTION_OUT_PIN, currentHemisphereLow);
   
+  // Set HEMISPHERE_IN_PIN to input with integrated Pullup Resistor to simplify the switch.
+  pinMode(HEMISPHERE_IN_PIN, INPUT_PULLUP);
+
   // Initialize the communication to the lcd display
   lcd.init();
   lcd.backlight();
@@ -76,6 +83,19 @@ String rotationsPerDay = "";
 void loop()
 {
   int potiValue = analogRead(SPEED_POTI_IN_PIN);
+  int hemisphereValue = digitalRead(HEMISPHERE_IN_PIN); 
+
+  if (hemisphereValue && currentHemisphereHigh != HIGH) {
+    // If the hemisphere switch is on and the current High value is not set to `HIGH` set the direction to the "default"-direction
+    currentHemisphereHigh = HIGH;
+    currentHemisphereLow = LOW;
+    potiValue = oldValue + 1; // Change the poti value to reset the setting of direction.
+  } else  if (!hemisphereValue && currentHemisphereHigh == HIGH) {
+    // If the hemisphere switch is off and the current High value is set to `HIGH` set the direction to the "reverse"-direction
+    currentHemisphereHigh = LOW;
+    currentHemisphereLow = HIGH;
+    potiValue = oldValue + 1; // Change the poti value to reset the setting of direction.
+  }
 
   if (potiValue > LOWER_BOUND && potiValue < UPPER_BOUND && potiValue != oldValue) {
     // When the poti is in the middle section set the speed to the needed default speed to achieve the desired speed of 1 rotation per minute
@@ -84,7 +104,7 @@ void loop()
     displayString = "Standard";
     
     // Set direction to low (Default Direction)
-    digitalWrite(DIRECTION_OUT_PIN, LOW);
+    digitalWrite(DIRECTION_OUT_PIN, currentHemisphereLow);
 
     // Turn the backlight of the display of, to not interfere with the image
     lcd.noBacklight();
@@ -103,13 +123,13 @@ void loop()
 
   if (potiValue < LOWER_BOUND && potiValue != oldValue) {
     // Set direction to high, Reversing the direction of the stepper motor
-    digitalWrite(DIRECTION_OUT_PIN, HIGH);
+    digitalWrite(DIRECTION_OUT_PIN, currentHemisphereHigh);
     displayString = "Ruecklauf";
   }
 
   if (potiValue > UPPER_BOUND && potiValue != oldValue) {
     // Set direction to low (Default Direction)
-    digitalWrite(DIRECTION_OUT_PIN, LOW);
+    digitalWrite(DIRECTION_OUT_PIN, currentHemisphereLow);
     displayString = "Vorlauf";
   }
 
