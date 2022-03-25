@@ -47,7 +47,7 @@ void setup()
   // Pulslänge
   OCR1A = 100;
 
-  // Ziel: 32 × Microstepping / Prescale 1 / 80s Versatz
+  // Ziel: 32 × Microstepping / Prescale 1 / 0,8s Versatz
   // Bedingungen:
   // - normaler Modus 200 Steps pro Umdrehung
   // - Microsteps: 32
